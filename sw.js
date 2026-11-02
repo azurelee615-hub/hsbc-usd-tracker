@@ -7,7 +7,7 @@
  */
 'use strict';
 
-var CACHE_VERSION = 'v1';
+var CACHE_VERSION = 'v2';
 var CACHE_NAME = 'hsbc-usd-tracker-' + CACHE_VERSION;
 
 var PRECACHE = [
@@ -17,10 +17,10 @@ var PRECACHE = [
   './core.js',
   './app.js',
   './manifest.webmanifest',
-  './icons/icon-180.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png'
+  './icon-180.png',
+  './icon-192.png',
+  './icon-512.png',
+  './icon-maskable-512.png'
 ];
 
 self.addEventListener('install', function (event) {
