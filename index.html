@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>汇丰美元管家</title>
+  <meta name="description" content="每天记录汇丰银行美元储蓄账户与投资账户余额，自动汇总、查看趋势并导出备份。">
+  <meta name="theme-color" content="#db0011" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16181d" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="美元管家">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">$</div>
+        <div class="brand-text">
+          <h1>汇丰美元管家</h1>
+          <p class="sub" id="todayLine">今天</p>
+        </div>
+      </div>
+      <span class="pill warn" id="todayPill">今日未记录</span>
+    </header>
+
+    <div class="install-tip hidden" id="installTip">
+      <span>把本页添加到主屏幕，用起来更像 App：Safari 分享按钮 → 添加到主屏幕。</span>
+      <button type="button" class="x" id="dismissInstall" aria-label="关闭提示">✕</button>
+    </div>
+
+    <main>
+      <section class="card form-card" id="formCard">
+        <div class="card-head">
+          <h2>记录余额</h2>
+          <span class="hint" id="formHint">美元账户余额（USD）</span>
+        </div>
+
+        <div class="field-row">
+          <label class="field">
+            <span class="field-label">储蓄美元账户</span>
+            <span class="input-wrap">
+              <span class="prefix" aria-hidden="true">$</span>
+              <input id="savings" type="text" inputmode="decimal" enterkeyhint="next"
+                     autocomplete="off" autocapitalize="off" spellcheck="false"
+                     placeholder="0.00" aria-label="储蓄美元账户余额">
+            </span>
+          </label>
+          <label class="field">
+            <span class="field-label">投资美元账户</span>
+            <span class="input-wrap">
+              <span class="prefix" aria-hidden="true">$</span>
+              <input id="investment" type="text" inputmode="decimal" enterkeyhint="done"
+                     autocomplete="off" autocapitalize="off" spellcheck="false"
+                     placeholder="0.00" aria-label="投资美元账户余额">
+            </span>
+          </label>
+        </div>
+
+        <div class="field-row sub-row">
+          <label class="field field-date">
+            <span class="field-label">日期</span>
+            <input id="date" class="plain-input" type="date">
+          </label>
+          <label class="field field-note">
+            <span class="field-label">备注（可选）</span>
+            <input id="note" class="plain-input" type="text" maxlength="80"
+                   autocomplete="off" placeholder="如：工资入账">
+          </label>
+        </div>
+
+        <div class="total-line">
+          <span>合计（USD）</span>
+          <strong id="liveTotal">$0.00</strong>
+        </div>
+
+        <button class="btn primary" id="saveBtn" type="button">保存记录</button>
+        <button class="btn ghost hidden" id="deleteBtn" type="button">删除这一天的记录</button>
+        <p class="form-msg" id="formMsg" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="stats" aria-label="汇总">
+        <div class="stat">
+          <span class="stat-label">最新总额</span>
+          <strong class="stat-value" id="statTotal">—</strong>
+          <span class="stat-sub" id="statTotalDate">还没有记录</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">较上次</span>
+          <strong class="stat-value" id="statDelta">—</strong>
+          <span class="stat-sub" id="statDeltaSub">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">记录天数</span>
+          <strong class="stat-value" id="statDays">0</strong>
+          <span class="stat-sub">累计</span>
+        </div>
+      </section>
+
+      <section class="card chart-card">
+        <div class="card-head chart-head">
+          <h2>余额趋势</h2>
+          <div class="seg" id="rangeSeg" role="group" aria-label="时间范围">
+            <button type="button" data-range="7">7天</button>
+            <button type="button" data-range="30" class="active">30天</button>
+            <button type="button" data-range="90">90天</button>
+            <button type="button" data-range="all">全部</button>
+          </div>
+        </div>
+        <div class="chart-wrap" id="chartWrap">
+          <svg id="chart" role="img" aria-label="余额趋势图"></svg>
+          <div class="tooltip hidden" id="tooltip" aria-hidden="true"></div>
+        </div>
+        <p class="empty hidden" id="chartEmpty">这个时间范围内还没有数据。</p>
+        <div class="legend">
+          <span class="legend-item"><i class="dot dot-total" aria-hidden="true"></i>合计</span>
+          <button type="button" class="legend-btn active" data-series="savings"><i class="dot dot-savings" aria-hidden="true"></i>储蓄</button>
+          <button type="button" class="legend-btn active" data-series="investment"><i class="dot dot-investment" aria-hidden="true"></i>投资</button>
+        </div>
+      </section>
+
+      <section class="card history-card">
+        <div class="card-head">
+          <h2>历史记录</h2>
+          <span class="hint" id="historyCount"></span>
+        </div>
+        <ul class="history" id="historyList"></ul>
+        <p class="empty" id="historyEmpty">还没有记录，先在上面填写今天的两个数字。</p>
+        <button class="btn ghost hidden" id="moreBtn" type="button">显示更早的记录</button>
+      </section>
+
+      <section class="card tools-card">
+        <div class="card-head">
+          <h2>数据与备份</h2>
+          <span class="hint">只保存在本机</span>
+        </div>
+        <div class="tool-grid">
+          <button class="btn" id="exportCsv" type="button">导出 CSV</button>
+          <button class="btn" id="exportJson" type="button">备份 JSON</button>
+          <button class="btn" id="importBtn" type="button">恢复备份</button>
+          <button class="btn danger" id="clearBtn" type="button">清空数据</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+        <p class="tiny">数据保存在本机 Safari 中，不会上传服务器。建议每周导出一次备份；换手机时用「恢复备份」迁移。</p>
+      </section>
+
+      <section class="card help-card">
+        <details>
+          <summary>怎么设置每天 10:00 提醒？</summary>
+          <ol class="help-list">
+            <li>用 Safari 打开本页，点分享 → <strong>添加到主屏幕</strong>。</li>
+            <li>打开「快捷指令」→ 底部「自动化」→ 新建自动化 → <strong>特定时间</strong>，设为 10:00、每天。</li>
+            <li>添加操作「<strong>打开 URL</strong>」，填入本页地址；关闭「运行前询问」。</li>
+            <li>每天 10 点会自动打开本页，填入两个数字点保存即可。</li>
+          </ol>
+        </details>
+      </section>
+
+      <footer class="foot">汇丰美元管家 · 数据只在本机 · 记得定期备份</footer>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-panel">
+      <h3 id="modalTitle">确认</h3>
+      <p id="modalMessage"></p>
+      <div class="modal-actions">
+        <button class="btn" id="modalCancel" type="button">取消</button>
+        <button class="btn primary" id="modalOk" type="button">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <noscript>
+    <p style="padding:20px;text-align:center">需要开启 JavaScript 才能使用。</p>
+  </noscript>
+
+  <script src="./core.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
